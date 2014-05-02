@@ -304,6 +304,25 @@ install_ie_win7() { # vm url
     wait_for_shutdown "${1}"
 }
 
+install_jre_win7() {
+    local src=`basename "${2}"`
+    local dest="/Users/${guest_user}/Desktop/${src}"
+
+    download "${src}" "${2}" "${src}"
+    start_vm "${1}"
+    wait_for_guestcontrol "${1}"
+    copy_to_vm "${1}" "${src}" "${dest}"
+
+    log "Installing JRE"
+    guest_control_exec "${1}" "cmd.exe" /c \
+      "echo ${dest} /s >C:\\Users\\${guest_user}\\ievms.bat"
+    guest_control_exec "${1}" "cmd.exe" /c \
+      "echo shutdown.exe /s /f /t 0 >>C:\\Users\\${guest_user}\\ievms.bat"
+    guest_control_exec "${1}" "schtasks.exe" /run /tn ievms
+
+    wait_for_shutdown "${1}"
+}
+
 # Build an ievms virtual machine given the IE version desired.
 build_ievm() {
     unset archive
@@ -341,7 +360,7 @@ build_ievm() {
     unit=${unit:-"11"}
     local ova=`basename "${archive/_/ - }" .zip`.ova
     local url="http://virtualization.modern.ie/vhd/IEKitV1_Final/VirtualBox/OSX/${archive}"
-    
+
     log "Checking for existing OVA at ${ievms_home}/${ova}"
     if [[ ! -f "${ova}" ]]
     then
@@ -363,7 +382,7 @@ build_ievm() {
 
         log "Tagging VM with ievms version"
         VBoxManage setextradata "${vm}" "ievms" "{\"version\":\"${ievms_version}\"}"
-        
+
         log "Creating clean snapshot"
         VBoxManage snapshot "${vm}" take clean --description "The initial VM state"
     fi
@@ -416,7 +435,8 @@ build_ievm_ie10() {
 # Build the IE11 virtual machine, reusing the Win7 VM always.
 build_ievm_ie11() {
     boot_auto_ga "IE11 - Win7"
-    install_ie_win7 "IE11 - Win7" "http://download.microsoft.com/download/9/2/F/92FC119C-3BCD-476C-B425-038A39625558/IE11-Windows6.1-x86-en-us.exe"
+    #install_ie_win7 "IE11 - Win7" "http://download.microsoft.com/download/9/2/F/92FC119C-3BCD-476C-B425-038A39625558/IE11-Windows6.1-x86-en-us.exe"
+    install_jre_win7 "IE11 - Win7" "http://www.java.net/download/jdk7u60/archive/b15/binaries/jre-7u60-ea-bin-b15-windows-i586-16_apr_2014.exe"
 }
 
 # ## Main Entry Point
