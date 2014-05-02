@@ -217,7 +217,7 @@ boot_auto_ga() {
 # Start a virtual machine in headless mode.
 start_vm() {
     log "Starting VM ${1}"
-    VBoxManage startvm "${1}" --type headless
+    VBoxManage startvm "${1}"
 }
 
 # Copy a file to the virtual machine. An optional password will be used
@@ -321,6 +321,39 @@ install_jre_win7() {
     guest_control_exec "${1}" "schtasks.exe" /run /tn ievms
 
     wait_for_shutdown "${1}"
+}
+
+install_tb3_win7() {
+    local src=`basename "${2}"`
+    local dest="/Users/${guest_user}/Desktop/${src}"
+
+    download "${src}" "${2}" "${src}"
+    start_vm "${1}"
+    wait_for_guestcontrol "${1}"
+    copy_to_vm "${1}" "${src}" "${dest}"
+
+    log "Installing TestBench 3"
+    guest_control_exec "${1}" "cmd.exe" /c \
+      "echo cinst 7zip >C:\\Users\\${guest_user}\\ievms.bat"
+    guest_control_exec "${1}" "cmd.exe" /c \
+      "echo 7z e ${dest} C:\\Testbench3 >C:\\Users\\${guest_user}\\ievms.bat"
+    guest_control_exec "${1}" "cmd.exe" /c \
+      "echo shutdown.exe /s /f /t 0 >>C:\\Users\\${guest_user}\\ievms.bat"
+    guest_control_exec "${1}" "schtasks.exe" /run /tn ievms
+
+    wait_for_shutdown "${1}"
+
+}
+
+install_chocolatey_win7() {
+  log "Installing Chocolatey"
+  guest_control_exec "${1}" "cmd.exe" /c \
+    "echo @powershell -NoProfile -ExecutionPolicy unrestricted -Command "iex ((new-object net.webclient).DownloadString('https://chocolatey.org/install.ps1'))" && SET PATH=%PATH%;%systemdrive%\chocolatey\bin >C:\\Users\\${guest_user}\\ievms.bat"
+  guest_control_exec "${1}" "cmd.exe" /c \
+    "echo shutdown.exe /s /f /t 0 >>C:\\Users\\${guest_user}\\ievms.bat"
+  guest_control_exec "${1}" "schtasks.exe" /run /tn ievms
+
+  wait_for_shutdown "${1}"
 }
 
 # Build an ievms virtual machine given the IE version desired.
@@ -437,6 +470,7 @@ build_ievm_ie11() {
     boot_auto_ga "IE11 - Win7"
     #install_ie_win7 "IE11 - Win7" "http://download.microsoft.com/download/9/2/F/92FC119C-3BCD-476C-B425-038A39625558/IE11-Windows6.1-x86-en-us.exe"
     install_jre_win7 "IE11 - Win7" "http://www.java.net/download/jdk7u60/archive/b15/binaries/jre-7u60-ea-bin-b15-windows-i586-16_apr_2014.exe"
+    install_tb3_win7 "IE11 - Win7" "https://www.dropbox.com/s/gsrciqk5ftxfu99/testbench3.zip"
 }
 
 # ## Main Entry Point
