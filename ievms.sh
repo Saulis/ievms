@@ -348,7 +348,7 @@ install_tb3_win7() {
 install_chocolatey_win7() {
   log "Installing Chocolatey"
   guest_control_exec "${1}" "cmd.exe" /c \
-    "echo @powershell -NoProfile -ExecutionPolicy unrestricted -Command "iex ((new-object net.webclient).DownloadString('https://chocolatey.org/install.ps1'))" && SET PATH=%PATH%;%systemdrive%\chocolatey\bin >C:\\Users\\${guest_user}\\ievms.bat"
+    'echo @powershell -NoProfile -ExecutionPolicy unrestricted -Command "iex ((new-object net.webclient).DownloadString('https://chocolatey.org/install.ps1'))" && SET PATH=%PATH%;%systemdrive%\chocolatey\bin >C:\\Users\\${guest_user}\\ievms.bat'
   guest_control_exec "${1}" "cmd.exe" /c \
     "echo shutdown.exe /s /f /t 0 >>C:\\Users\\${guest_user}\\ievms.bat"
   guest_control_exec "${1}" "schtasks.exe" /run /tn ievms
